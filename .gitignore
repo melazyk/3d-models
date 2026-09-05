@@ -1,0 +1,20 @@
+# Build artifacts -- regenerated from model.py via build.py.
+/build/
+
+# Large downloaded toolchain for regenerating connectors (OpenSCAD AppImage, BOSL2).
+# Recreate with lib/connectors/vendor/regenerate.sh
+lib/connectors/vendor/openscad.AppImage
+lib/connectors/vendor/squashfs-root/
+lib/connectors/vendor/BOSL2/
+lib/connectors/vendor/opengrid-src/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+
+# Editor
+.DS_Store
+*.swp
