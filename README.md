@@ -97,9 +97,13 @@ MOUNTS = mounts.combine(mounts.snaps(...), mounts.slots(...))
 `build.py` fuses these via OpenSCAD's manifold backend. First run needs OpenSCAD:
 `bash lib/connectors/vendor/regenerate.sh` (downloads it locally, no root).
 
-Worked examples: [`models/opengrid-needle-holder/`](models/opengrid-needle-holder/)
-(2×2 snaps), [`models/opengrid-1cell-box/`](models/opengrid-1cell-box/) (snap +
-Multiconnect from one model, `MOUNT=multiconnect python build.py ...`).
+Worked examples (each has a matching `prompts/<name>.md`):
+- [`models/opengrid-needle-holder/`](models/opengrid-needle-holder/) — 2×2 snaps
+- [`models/opengrid-1cell-box/`](models/opengrid-1cell-box/) — snap + Multiconnect
+  from one model (`MOUNT=multiconnect python build.py ...`)
+- [`models/gridfinity-divider-bin/`](models/gridfinity-divider-bin/) — Gridfinity
+  bin with a grid of compartments
+- [`models/gridfinity-baseplate/`](models/gridfinity-baseplate/) — basic baseplate
 
 ---
 

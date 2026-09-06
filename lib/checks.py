@@ -7,9 +7,14 @@ snap / backer attaches. Both take a trimesh mesh.
 from __future__ import annotations
 
 
-def min_wall(mesh, samples: int = 800) -> float | None:
-    """~1st-percentile local thickness in mm (distance from each surface sample,
-    along -normal, to the opposite wall). None if it can't be measured."""
+EDGE_ARTIFACT = 0.3  # hits closer than this are chamfer/fillet slivers, not walls
+
+
+def min_wall(mesh, samples: int = 900) -> float | None:
+    """Rough min wall thickness in mm: ray-cast from surface samples along the
+    inward normal to the opposite face, drop sub-`EDGE_ARTIFACT` slivers (sharp
+    edges read as ~0), take the 1st percentile of the rest. Approximate -- a
+    heuristic, not a slicer. None if it can't be measured."""
     try:
         import numpy as np
         import trimesh  # noqa: F401
@@ -25,15 +30,18 @@ def min_wall(mesh, samples: int = 800) -> float | None:
         if len(locs) == 0:
             return None
         d = np.linalg.norm(locs - origins[ray_idx], axis=1)
-        d = d[d > 1e-3]
+        d = d[d > EDGE_ARTIFACT]
         return float(np.percentile(d, 1)) if len(d) else None
     except Exception:  # noqa: BLE001
         return None
 
 
 def _sample(mesh, n):
+    import logging
+
     import trimesh
 
+    logging.getLogger("trimesh").setLevel(logging.ERROR)
     try:
         pts, fidx = trimesh.sample.sample_surface_even(mesh, n)
         if len(pts):

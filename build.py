@@ -45,7 +45,11 @@ def load_model(script: Path):
         part = mod.result
     else:
         raise SystemExit(f"{script}: define `result = ...` or `def build(): ...`")
-    return part, getattr(mod, "MOUNTS", None), getattr(mod, "PREVIEW", None)
+    opts = {
+        "preview": getattr(mod, "PREVIEW", None),
+        "checks": getattr(mod, "CHECKS", {}) or {},
+    }
+    return part, getattr(mod, "MOUNTS", None), opts
 
 
 def iter_models(root: Path = ROOT):
@@ -140,12 +144,14 @@ def build_target(script: Path, *, want_png: bool, tol: float,
             print(msg)
 
     try:
-        part, mount_spec, preview_spec = load_model(script)
+        part, mount_spec, opts = load_model(script)
     except BaseException as e:  # noqa: BLE001  (SystemExit from load_model too)
         res.ok = False
         res.error = f"load/build failed: {e}"
         log(f"[{name}] ERROR {res.error}")
         return res
+    preview_spec = opts["preview"]
+    check_opts = opts["checks"]
 
     if not isinstance(part, cq.Workplane):
         part = cq.Workplane(obj=part)
@@ -207,12 +213,15 @@ def build_target(script: Path, *, want_png: bool, tol: float,
         from lib import checks
 
         bmesh = trimesh.load(str(check_stl))
-        res.wall_min = checks.min_wall(bmesh)
-        if mount_spec and res.mounts_applied:
+        if check_opts.get("min_wall", True):
+            res.wall_min = checks.min_wall(bmesh)
+        if mount_spec and res.mounts_applied and check_opts.get("mounts", True):
             res.uncovered = checks.uncovered_mounts(bmesh, mount_spec)
         if res.wall_min is not None:
-            thin = res.wall_min < printer.WALL_MIN
-            log(f"  min wall ~{res.wall_min:.2f} mm" + ("  <- below WALL_MIN" if thin else ""))
+            # a small tolerance below WALL_MIN -- the ray estimate is noisy and
+            # legit features (Gridfinity's 0.8 mm foot step) sit right at it.
+            thin = res.wall_min < printer.WALL_MIN * 0.9
+            log(f"  min wall ~{res.wall_min:.2f} mm" + ("  <- thin!" if thin else ""))
             if thin:
                 res.warnings.append(
                     f"min wall ~{res.wall_min:.2f} mm < WALL_MIN {printer.WALL_MIN}"

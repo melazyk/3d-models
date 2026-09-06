@@ -22,9 +22,9 @@ Work items **top to bottom**; do one item per PR/commit unless they're trivial.
 ### 1. Prompt cookbook + golden examples
 - **Goal:** 5–6 proven `prompts/<name>.md` → `models/<name>/` pairs covering the
   common shapes, so the `/model` skill has something to pattern-match.
-- **Cover:** Gridfinity bin with dividers; Gridfinity baseplate; openGrid tray/shelf;
-  openGrid hook; tool holder with a cavity sized to a given diameter; bottle/spray
-  holder.
+- **Cover:** ~~Gridfinity bin with dividers~~; ~~Gridfinity baseplate~~; openGrid
+  tray/shelf; openGrid hook; tool holder with a cavity sized to a given diameter;
+  bottle/spray holder. _(2 of ~6 done — see Done.)_
 - **Files:** `prompts/*.md`, `models/*/model.py`, `models/*/README.md`.
 - **Acceptance:** each builds green in the regression suite; each prompt, fed cold
   to `/model`, reproduces a working model with ≤1 follow-up.
@@ -83,9 +83,14 @@ Work items **top to bottom**; do one item per PR/commit unless they're trivial.
   solid, 1st percentile) and uncovered-mount detection (point-sample the body
   where each snap/backer attaches). Run on the mount-free body so vendored snap
   tabs don't false-alarm. Uncovered mount → always fails; thin wall → warning,
-  `--strict` fails below `WALL_HARD_FLOOR` (0.6 mm). — _TBD_
+  `--strict` fails below `WALL_HARD_FLOOR` (0.6 mm). — _fbac0ae_
 - **Preview overhaul** (`lib/render.py`, `lib/fixtures.py`): 4 labelled panels
   (iso + bbox dims, opening, mid-plane section via `vtkClipClosedSurface`, wall
   side); translucent reference fixture behind the part (openGrid board inferred
   from MOUNTS, or a model's `PREVIEW` dict for a Gridfinity baseplate / custom
   section axis). — _65f2e46_
+- **Per-model `CHECKS` opt-out** (`{"min_wall": False}` / `{"mounts": False}`) via a
+  module-level dict, read alongside `PREVIEW`. — _TBD_
+- **Gridfinity golden examples**: `models/gridfinity-divider-bin/` (compartment
+  grid) and `models/gridfinity-baseplate/` (basic baseplate), each with a
+  `prompts/<name>.md`. First models to exercise `lib/gridfinity.py`. — _TBD_

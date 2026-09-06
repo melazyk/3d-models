@@ -36,11 +36,13 @@ def build(p: P = P()) -> cq.Workplane:
     return body
 
 
-# --- preview (optional) -------------------------------------------------------
+# --- preview / checks (optional) ----------------------------------------------
 # build.py draws a translucent reference behind the model and cuts a section.
 # Auto-inferred from MOUNTS; override here if needed:
 #   PREVIEW = {"fixture": "opengrid", "cols": 2, "rows": 2, "section_axis": "x"}
 #   PREVIEW = {"fixture": "gridfinity", "nx": 2, "ny": 1}
+# Opt a model out of a design-rule check (only when it genuinely doesn't apply):
+#   CHECKS = {"min_wall": False}   # or {"mounts": False}
 
 
 # --- how it mounts (delete if it doesn't) --------------------------------------

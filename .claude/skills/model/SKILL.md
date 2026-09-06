@@ -25,7 +25,10 @@ often **Multiconnect** / **openConnect** snaps or **Gridfinity** (42 mm).
 2. **Read `docs/design-rules.md`** before choosing any dimension that has a fit
    (clearances, screw holes, wall thickness, grid pitches).
 
-3. **Scaffold**: `cp templates/model_template.py models/<kebab-name>/model.py`.
+3. **Scaffold**: copy the closest existing model (`models/*/model.py`, each has a
+   matching `prompts/*.md`) or `templates/model_template.py` to
+   `models/<kebab-name>/model.py`. Gridfinity → start from `gridfinity-divider-bin`
+   or `gridfinity-baseplate`; openGrid → `opengrid-needle-holder` / `opengrid-1cell-box`.
    Keep every tunable in the `P` dataclass. Use `lib/`:
    - `lib/printer.py` — clearances (`CLEARANCE_NORMAL` …), `SCREWS["M3"]`, `report_fit`.
    - `lib/gridfinity.py` — `base_plate`, `bin_body`, `solid_bin`.
