@@ -36,6 +36,13 @@ def build(p: P = P()) -> cq.Workplane:
     return body
 
 
+# --- preview (optional) -------------------------------------------------------
+# build.py draws a translucent reference behind the model and cuts a section.
+# Auto-inferred from MOUNTS; override here if needed:
+#   PREVIEW = {"fixture": "opengrid", "cols": 2, "rows": 2, "section_axis": "x"}
+#   PREVIEW = {"fixture": "gridfinity", "nx": 2, "ny": 1}
+
+
 # --- how it mounts (delete if it doesn't) --------------------------------------
 # Permanent: snaps click the whole accessory onto the openGrid wall.
 MOUNTS = mounts.snaps("jp4", cols=2, rows=2)

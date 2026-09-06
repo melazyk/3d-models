@@ -45,7 +45,7 @@ def load_model(script: Path):
         part = mod.result
     else:
         raise SystemExit(f"{script}: define `result = ...` or `def build(): ...`")
-    return part, getattr(mod, "MOUNTS", None)
+    return part, getattr(mod, "MOUNTS", None), getattr(mod, "PREVIEW", None)
 
 
 def iter_models(root: Path = ROOT):
@@ -131,7 +131,7 @@ def build_target(script: Path, *, want_png: bool, tol: float,
             print(msg)
 
     try:
-        part, mount_spec = load_model(script)
+        part, mount_spec, preview_spec = load_model(script)
     except BaseException as e:  # noqa: BLE001  (SystemExit from load_model too)
         res.ok = False
         res.error = f"load/build failed: {e}"
@@ -188,11 +188,23 @@ def build_target(script: Path, *, want_png: bool, tol: float,
     log(f"  wrote {stl.relative_to(ROOT)}, {step.relative_to(ROOT)}")
 
     if want_png:
-        from lib import render
+        from lib import fixtures, render
 
+        fixture_stl = None
+        try:
+            fspec = preview_spec or fixtures.infer_fixture(mount_spec, part)
+            fx = fixtures.build_fixture(fspec) if fspec else None
+            if fx is not None:
+                fixture_stl = str(out / "_fixture.stl")
+                cq.exporters.export(fx, fixture_stl, tolerance=tol, angularTolerance=0.2)
+        except Exception as e:  # noqa: BLE001
+            res.warnings.append(f"preview fixture skipped: {e}")
+
+        sec_axis = (preview_spec or {}).get("section_axis", "y")
         png = out / "preview.png"
         try:
-            render.render_png(str(stl), str(png))
+            render.render_png(str(stl), str(png), section_axis=sec_axis,
+                              fixture_stl=fixture_stl)
             log(f"  wrote {png.relative_to(ROOT)}")
         except Exception as e:  # noqa: BLE001
             svg = out / "preview.svg"
