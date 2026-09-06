@@ -90,7 +90,7 @@ Work items **top to bottom**; do one item per PR/commit unless they're trivial.
   from MOUNTS, or a model's `PREVIEW` dict for a Gridfinity baseplate / custom
   section axis). — _65f2e46_
 - **Per-model `CHECKS` opt-out** (`{"min_wall": False}` / `{"mounts": False}`) via a
-  module-level dict, read alongside `PREVIEW`. — _TBD_
+  module-level dict, read alongside `PREVIEW`. — _3ccfb6a_
 - **Gridfinity golden examples**: `models/gridfinity-divider-bin/` (compartment
   grid) and `models/gridfinity-baseplate/` (basic baseplate), each with a
-  `prompts/<name>.md`. First models to exercise `lib/gridfinity.py`. — _TBD_
+  `prompts/<name>.md`. First models to exercise `lib/gridfinity.py`. — _3ccfb6a_
