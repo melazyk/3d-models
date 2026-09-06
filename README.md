@@ -64,7 +64,7 @@ Parameters (P dataclass): <name = default  # meaning> ...
 Geometry: <orientation — mounting face on XY at z=0, body in +Z, "up" is +Y>,
 <walls, floor, fillets, the opening>.
 
-Mount: MOUNTS = mounts.snaps("basic_full", cols=1, rows=1)   # or mounts.slots(...)
+Mount: MOUNTS = mounts.snaps("jp4", cols=1, rows=1)   # or mounts.slots("multiconnect", ...)
 
 Print: <orientation, supports, material>.
 
@@ -81,16 +81,17 @@ the **XY plane (z = 0)**, the body is in **+Z**, "up" is **+Y**.
 ```python
 from lib import mounts
 
-MOUNTS = mounts.snaps("basic_full", cols=2, rows=2)      # openGrid snaps (click-on)
+MOUNTS = mounts.snaps("jp4", cols=2, rows=2)               # openGrid snaps (click-on)
 MOUNTS = mounts.slots("multiconnect", count=2, height=45)  # Multiconnect v2 slotted backer
 MOUNTS = mounts.combine(mounts.snaps(...), mounts.slots(...))
 ```
 
-- `snaps(kind, cols, rows)` — `kind` = `bare_full/lite`, `basic_full/lite`
-  (`basic` adds the M16 openGrid thread for a locking screw). `_full` = 6.8 mm
-  board, `_lite` = 4 mm.
+- `snaps(kind, cols, rows)` — `kind` = `jp4` (default): **4 flex tabs**, press-in,
+  seats at any 90° rotation, **GPL-3.0**. Also `jp`/`jp_sym` (2 tabs), or the
+  mitufy family `bare_full/lite`, `basic_full/lite` (CC BY-4.0) — different profile,
+  test-print the fit. Print the accessory snap-side-up so the tabs print flat.
 - `slots("multiconnect", count, width, height)` — fuses the standard Multiconnect
-  slotted back plate (QuackWorks geometry). Print `lib/connectors/snap_multiconnect_full.stl`
+  v2 slotted back plate (QuackWorks geometry). Print `lib/connectors/snap_multiconnect_full.stl`
   separately to snap into the board. **CC BY-NC** — non-commercial.
 
 `build.py` fuses these via OpenSCAD's manifold backend. First run needs OpenSCAD:

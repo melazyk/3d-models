@@ -64,22 +64,31 @@ Accessories mount to openGrid via **snap connectors** that engage the 28 mm hole
   most widely supported standard. Center hole is a printed thread for a bolt so the
   accessory can be locked/removed.
 
-The exact snap engagement profile is **not published as clean numbers** and must not
-be reconstructed from memory. The official shapes are already vendored as STL in
-`lib/connectors/` (rendered from mitufy's CC-BY OpenSCAD libs — see that README).
-Design your accessory with a **flat mating face on the XY plane** and let
-`lib/mounts.py` + `build.py` fuse the snaps:
+Do not reconstruct the snap profile from memory. The official shapes are vendored
+as STL in `lib/connectors/` (rendered from published OpenSCAD). Design your
+accessory with a **flat mating face on the XY plane** and let `lib/mounts.py` +
+`build.py` fuse them:
 
 ```python
-MOUNTS = mounts.snaps("basic_full", cols=2, rows=2)   # permanent: clicks onto wall
-MOUNTS = mounts.slots("multiconnect", count=2)         # removable: female slot
+MOUNTS = mounts.snaps("jp4", cols=2, rows=2)         # openGrid snap, clicks onto the wall
+MOUNTS = mounts.slots("multiconnect", count=2)        # Multiconnect v2 slotted backer
 ```
 
-Snap kinds: `bare_full` / `bare_lite` (plain), `basic_full` / `basic_lite`
-(+ M16 openGrid thread so a screw can lock it). `_full` = 6.8 mm board, `_lite` = 4 mm.
+Snap kinds:
+- `jp4` (default) — **4 flex tabs**, one per cell side, so the snap seats at any
+  90° rotation (`lib/connectors/scad/jp/snap4.scad`, derived from jp-embedded/opengrid).
+  Press-in only, engages the tile's internal groove, 3.4 mm proud. **GPL-3.0** —
+  models inherit it.
+- `jp` / `jp_sym` — jp-embedded original, 2 flex tabs only.
+- `bare_full/lite`, `basic_full/lite` — **mitufy/opengrid-projects** (CC BY-4.0).
+  `basic` has the M16 locking thread. `_full` = 6.8 mm board, `_lite` = 4 mm.
+  Different profile — pick one family and test-print the fit.
 
-Official sources: https://www.opengrid.world/ ; mitufy/opengrid-projects on GitHub ;
-openGrid ecosystem on MakerWorld / Printables.
+Print the snap **face-up** (lay the accessory on the face opposite the wall) so
+the tabs and relief slots print flat.
+
+Official sources: https://www.opengrid.world/ ; jp-embedded/opengrid,
+mitufy/opengrid-projects, AndyLevesque/QuackWorks on GitHub.
 
 ## Multiconnect (standalone, Multiboard-origin) — 25 mm system
 

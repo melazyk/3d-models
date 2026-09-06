@@ -36,4 +36,4 @@ def build(p: P = P()) -> cq.Workplane:
     return tray
 
 
-MOUNTS = mounts.snaps("basic_full", cols=2, rows=2, origin=(0, 0))
+MOUNTS = mounts.snaps("jp4", cols=2, rows=2, origin=(0, 0))

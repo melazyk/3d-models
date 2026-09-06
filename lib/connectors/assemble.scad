@@ -4,17 +4,19 @@
  *
  *   openscad -o out.stl --backend=manifold \
  *     -D 'body_file="body.stl"' \
- *     -D 'add=[["snap_bare_full.stl", x, y, z, rotz], ...]' \
- *     -D 'cut=[["snap_oc_negative.stl", x, y, z, rotz], ...]' \
+ *     -D 'add=[[stl, x, y, z, rotz, mirror01], ...]' \
+ *     -D 'cut=[[stl, x, y, z, rotz, mirror01], ...]' \
  *     -D 'backers=[[cx, cy, w, h, pitch, onramp, yadj], ...]' \
  *     lib/connectors/assemble.scad
  *
  * One body convention: wall-facing mounting face on the XY plane (z = 0), body in
- * +Z, "up" is +Y.
- *   - add     : openGrid snap STLs, mirrored to occupy z = 0 .. -thickness.
- *   - cut     : negative STLs (e.g. openConnect slot), subtracted at z = 0 .. +depth
- *               so the pocket opens toward the wall (-Z).
- *   - backers : Multiconnect slotted back plate fused on at z = -6.5 .. 0.
+ * +Z, "up" is +Y.  Each add/cut item carries its own z offset and a mirror flag
+ * (mirror01 = 1 flips in z -- mitufy snaps need it; jp snaps and cut negatives
+ * don't, they are authored with a z offset instead).
+ *   - add     : openGrid snap STLs, ending up behind z = 0.
+ *   - cut     : negative STLs (e.g. openConnect slot), subtracted so the pocket
+ *               opens toward the wall (-Z).
+ *   - backers : Multiconnect v2 slotted back plate fused on at z = -6.5 .. 0.
  */
 use <scad/multiconnectSlotDesign.scad>
 
@@ -25,10 +27,11 @@ backers = [];
 $fa = 2;
 $fs = 0.4;
 
-module _place(items, mir) {
+// item = [path, x, y, z, rot_z, mirror_z(0/1)]  (mirror flag optional, default 0)
+module _place(items) {
   for (a = items)
     translate([a[1], a[2], a[3]]) rotate([0, 0, a[4]]) {
-      if (mir) mirror([0, 0, 1]) import(a[0]);
+      if (len(a) > 5 && a[5] != 0) mirror([0, 0, 1]) import(a[0]);
       else import(a[0]);
     }
 }
@@ -46,8 +49,8 @@ module _backer(s) {
 union() {
   difference() {
     import(body_file);
-    _place(cut, false);
+    _place(cut);
   }
-  _place(add, true);
+  _place(add);
   for (s = backers) _backer(s);
 }

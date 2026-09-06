@@ -5,11 +5,13 @@ that clicks onto an openGrid wall board.
 
 - **Model:** [model.py](model.py) — parametric (`P` dataclass: size, wall, hole count/dia).
 - **Build:** `python build.py models/opengrid-needle-holder`
-- **Print:** back face (–Z) down, no supports. PETG recommended for wall-mount rigidity.
-- **Mount:** 2×2 `basic_full` openGrid snaps (28 mm pitch). Push onto the board; drop an
-  M16 openGrid screw through each snap from behind if you want it locked.
+- **Print:** snap side up (lay the tray on its front face), no supports. PETG for
+  wall-mount rigidity.
+- **Mount:** 2×2 `jp4` openGrid snaps (28 mm pitch) — 4 flex tabs each, seat at any
+  90° rotation. Press onto the board.
 - Swap `mounts.snaps(...)` for `mounts.slots("multiconnect", ...)` in `model.py` for a
   removable Multiconnect version (then print `lib/connectors/snap_multiconnect_full.stl`).
 
-Connector geometry: openGrid snaps from [mitufy/opengrid-projects](https://github.com/mitufy/opengrid-projects)
-(CC BY 4.0); openGrid system by David D.
+Connector geometry: `lib/connectors/scad/jp/snap4.scad`, derived from
+[jp-embedded/opengrid](https://github.com/jp-embedded/opengrid), **GPL-3.0**;
+openGrid system by David D.

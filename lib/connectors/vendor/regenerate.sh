@@ -73,4 +73,24 @@ m.export(sys.argv[2])
 PY
 rm -f "$CONN/snap_oc_negative_raw.stl"
 
+# jp-embedded/opengrid snaps + the 4-way derivative (GPL-3.0), XY-centred afterwards
+jp() {  # out-name, scad-file, extra -D ...
+  local out="$1"; local scad="$2"; shift 2
+  echo ">> $CONN/$out"
+  "$OS" -o "$CONN/${out%.stl}_raw.stl" --export-format binstl --backend=manifold \
+    "$@" "$SCAD/jp/$scad" 2>&1 | grep -E 'Status:|ERROR' || true
+  python3 - "$CONN/${out%.stl}_raw.stl" "$CONN/$out" <<'PY'
+import sys, trimesh
+m = trimesh.load(sys.argv[1], process=True)
+c = m.bounds.mean(axis=0)
+m.apply_translation([-c[0], -c[1], 0.0])   # centre XY, keep insert at z 0..3.4
+m.export(sys.argv[2])
+PY
+  rm -f "$CONN/${out%.stl}_raw.stl"
+}
+jp snap_jp4_full.stl                    snap4.scad
+jp snap_jp_directional_full.stl         snap.scad  -D 'vertical=false' -D 'directional=true'
+jp snap_jp_symmetric_full.stl           snap.scad  -D 'vertical=false' -D 'directional=false'
+jp snap_jp_directional_thread_full.stl  snap.scad  -D 'vertical=false' -D 'directional=true' -D 'MultiConnect_Thread=true'
+
 echo "done."

@@ -38,7 +38,7 @@ def build(p: P = P()) -> cq.Workplane:
 
 # --- how it mounts (delete if it doesn't) --------------------------------------
 # Permanent: snaps click the whole accessory onto the openGrid wall.
-MOUNTS = mounts.snaps("basic_full", cols=2, rows=2)
+MOUNTS = mounts.snaps("jp4", cols=2, rows=2)
 
 # Removable instead: a Multiconnect female slot in the -Y face; print
 # snap_multiconnect_full.stl separately and slide the accessory onto it.

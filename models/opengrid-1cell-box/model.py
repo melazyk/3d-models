@@ -1,10 +1,11 @@
 """openGrid 1-cell tiling box -- small open-top wall pocket.
 
 The wall-facing panel fits inside one 28 mm openGrid cell, so identical boxes tile
-edge-to-edge in every direction. Depth (protrusion from the wall) is free.
+edge-to-edge in every direction. Default body is a cube (27.2 mm each way); set
+`depth` for a deeper or shallower pocket.
 
 Mounts, switched by `P.mount` (or `MOUNT=... python build.py ...`):
-  "snap"        -> one openGrid basic_full snap on the back (permanent click-on)
+  "snap"        -> one openGrid jp4 4-way snap on the back (press-in, any 90 deg)
   "multiconnect"-> a Multiconnect v2 slotted back plate fused on (QuackWorks geometry;
                    slide down onto a stud; CC BY-NC; ~14 mm channel at this size)
 
@@ -25,7 +26,7 @@ from lib import mounts, printer  # noqa: F401
 class P:
     cell: float = 28.0        # openGrid pitch -- do not change
     gap: float = 0.8          # total clearance to neighbours (0.4 mm per side)
-    depth: float = 40.0       # protrusion from the wall = interior box depth
+    depth: float = 0.0        # protrusion from wall; 0 = cube (= cell - gap)
     wall: float = 0.84        # side / front / floor -- exactly 2 perimeters @ 0.42
     corner_r: float = 0.8     # outer vertical corner fillet (<= wall, or corners breach)
     lip: float = 0.0          # inward retaining lip at the opening (0 = none)
@@ -37,17 +38,18 @@ _P = P(mount=os.environ.get("MOUNT", P.mount))
 
 def build(p: P = _P) -> cq.Workplane:
     w = p.cell - p.gap                        # against-wall panel is w x w
+    depth = p.depth if p.depth > 0 else w     # 0 -> cube (w x w x w)
     back = p.wall
 
     # Wall face on XY (z=0), box extends +Z by depth, "up" is +Y, opening faces +Y.
     box = (
         cq.Workplane("XY")
-        .box(w, w, p.depth, centered=(True, True, False))
+        .box(w, w, depth, centered=(True, True, False))
         .edges("|Y").fillet(p.corner_r)
     )
 
     open_x = w - 2 * p.wall
-    open_z = p.depth - back - p.wall
+    open_z = depth - back - p.wall
     cavity = (
         cq.Workplane("XY", origin=(0, -w / 2 + p.wall, back))
         .box(open_x, w, open_z, centered=(True, False, False))
@@ -70,6 +72,6 @@ def build(p: P = _P) -> cq.Workplane:
 
 _W = _P.cell - _P.gap
 MOUNTS = {
-    "snap": mounts.snaps("basic_full", cols=1, rows=1),
+    "snap": mounts.snaps("jp4", cols=1, rows=1),
     "multiconnect": mounts.slots("multiconnect", count=1, width=_W, height=_W),
 }[_P.mount]

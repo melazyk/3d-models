@@ -16,7 +16,7 @@ Usage in a model.py:
         return body
 
     # permanent: snaps click the whole accessory onto the wall
-    MOUNTS = mounts.snaps("basic_full", cols=3, rows=2)
+    MOUNTS = mounts.snaps("jp", cols=3, rows=2)
 
     # or removable: a Multiconnect female slot; print snap_multiconnect_full separately
     # MOUNTS = mounts.slots("multiconnect", count=2, height=45)
@@ -39,12 +39,24 @@ MULTICONNECT_PITCH = 25.0
 OPENGRID_FULL_T = 6.8
 OPENGRID_LITE_T = 4.0
 
-# snap kind -> (stl filename, board thickness)
+# snap kind -> (stl filename, z_offset, mirror_z)
+# The two families need different placement:
+#   jp-embedded  -- authored right-side-up, insert 0..3.4; drop by 3.4 so the
+#                   accessory-bond face lands on z=0.  (GPL-3.0 geometry)
+#   mitufy       -- authored 0..thickness; mirror in z so it goes behind z=0.
+#                   (CC BY-4.0 geometry, has the printed M16 locking thread)
 SNAPS = {
-    "bare_full": ("snap_bare_full.stl", OPENGRID_FULL_T),
-    "bare_lite": ("snap_bare_lite.stl", OPENGRID_LITE_T),
-    "basic_full": ("snap_basic_full.stl", OPENGRID_FULL_T),   # + M16 thread for a locking screw
-    "basic_lite": ("snap_basic_lite.stl", OPENGRID_LITE_T),
+    # 4-way symmetric (flex tabs on all 4 sides) -- seats at any 90 deg rotation. DEFAULT.
+    "jp4":        ("snap_jp4_full.stl", -3.4, 0),                   # press-in, no thread
+    # jp-embedded/opengrid, 2 flex tabs
+    "jp":        ("snap_jp_directional_full.stl", -3.4, 0),        # directional (vertical wall)
+    "jp_sym":    ("snap_jp_symmetric_full.stl", -3.4, 0),          # symmetric, still 2-way
+    "jp_thread": ("snap_jp_directional_thread_full.stl", -3.4, 0),
+    # mitufy/opengrid-projects
+    "bare_full":  ("snap_bare_full.stl", 0.0, 1),
+    "bare_lite":  ("snap_bare_lite.stl", 0.0, 1),
+    "basic_full": ("snap_basic_full.stl", 0.0, 1),                 # + M16 locking thread
+    "basic_lite": ("snap_basic_lite.stl", 0.0, 1),
 }
 SLOT_PITCH = {
     "multiconnect": MULTICONNECT_PITCH,
@@ -63,16 +75,19 @@ def snap_positions(cols: int, rows: int, pitch: float = OPENGRID_PITCH,
     ]
 
 
-def snaps(kind: str = "basic_full", *, cols: int = 2, rows: int = 2,
+def snaps(kind: str = "jp4", *, cols: int = 2, rows: int = 2,
           pitch: float = OPENGRID_PITCH, origin: tuple[float, float] = (0.0, 0.0),
           rot: float = 0.0) -> dict:
-    """A `cols` x `rows` grid of openGrid snaps to union onto the body's -Z face.
-    `kind` in SNAPS. Snaps are placed so they occupy z = 0 .. -board_thickness."""
+    """A `cols` x `rows` grid of openGrid snaps fused onto the body's z=0 face,
+    engaging the board behind it. `kind` in SNAPS -- default `"jp4"`: 4 flex tabs
+    (one per cell side) so it seats at any 90 deg rotation. GPL-3.0 geometry
+    (derived from jp-embedded/opengrid)."""
     if kind not in SNAPS:
         raise ValueError(f"unknown snap kind {kind!r}; pick from {list(SNAPS)}")
-    stl, _t = SNAPS[kind]
+    stl, zoff, mir = SNAPS[kind]
     path = str((CONN / stl).resolve())
-    return {"add": [[path, x, y, 0.0, rot] for x, y in snap_positions(cols, rows, pitch, origin)]}
+    return {"add": [[path, x, y, zoff, rot, mir]
+                    for x, y in snap_positions(cols, rows, pitch, origin)]}
 
 
 OC_NEGATIVE = "snap_oc_negative.stl"
@@ -90,7 +105,7 @@ def openconnect(*, cols: int = 1, rows: int = 1, pitch: float = OPENGRID_PITCH,
     (mitufy, **CC BY 4.0** -- commercial OK), and one slot fits a single 28 mm
     cell exactly -- the right choice for small tiling accessories."""
     path = str((CONN / OC_NEGATIVE).resolve())
-    return {"cut": [[path, x, y, 0.0, rot]
+    return {"cut": [[path, x, y, 0.0, rot, 0]
                     for x, y in snap_positions(cols, rows, pitch, origin)]}
 
 
