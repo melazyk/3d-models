@@ -3,6 +3,7 @@ cadquery>=2.8
 trimesh>=4.0
 manifold3d          # trimesh boolean backend + mesh validation
 numpy-stl
+pytest>=8           # regression suite: `pytest` rebuilds every model (tests/)
 # Preview rendering uses the VTK inside cadquery-ocp (OCP.IVtk*) -- no extra dep.
 # Models with MOUNTS also need OpenSCAD >= 2025.x at build time:
 #   bash lib/connectors/vendor/regenerate.sh      (downloads it, no root)

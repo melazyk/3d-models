@@ -116,8 +116,13 @@ Multiconnect from one model, `MOUNT=multiconnect python build.py ...`).
 | `lib/mounts.py` | openGrid / Multiconnect mounting — `snaps()`, `slots()`, `combine()` |
 | `lib/connectors/` | official snap/screw/slot geometry as STL + `vendor/regenerate.sh` |
 | `docs/design-rules.md` | dimensions, tolerances, grid specs — read before dimensioning fits |
-| `build.py` | `model.py` → STL + STEP + preview + metrics |
+| `build.py` | `model.py` → STL + STEP + preview + metrics; `--all` rebuilds every model |
+| `tests/` | `pytest` — regression: every model still builds solid / fits P2S / fuses mounts |
+| `docs/improvement-plan.md` | repo backlog for the agent (regression rules, `.modelignore`, roadmap) |
 | `CLAUDE.md` | how the AI workflow keeps token cost down (models as code, never read meshes) |
+
+A model directory with a **`.modelignore`** file is skipped by `build.py --all`,
+the tests, and reference-example matching (used for non-parametric vendor remixes).
 
 STL / 3MF / gcode are build artifacts and gitignored (except the vendored connector
 STLs in `lib/connectors/`). `lib/connectors/vendor/` (OpenSCAD, BOSL2) is gitignored

@@ -1,0 +1,9 @@
+# Presence of this file tells repo tooling to leave this model alone:
+#   - `python build.py --all` and the regression tests skip it
+#   - it is NOT a reference example for the /model skill (no parametric model.py)
+#
+# Why: this is a vendor remix kept as downloaded geometry (STEP / 3MF / STL),
+# intentionally not re-modelled as CadQuery. Do not pattern-match new models on it
+# and do not read its meshes into context.
+#
+# Source: https://makerworld.com/ru/models/18434-circle-drawing-tool-for-dry-erase-board

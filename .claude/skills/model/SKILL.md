@@ -52,7 +52,13 @@ often **Multiconnect** / **openConnect** snaps or **Gridfinity** (42 mm).
 6. **Document**: add `models/<name>/README.md` — what it is, print orientation,
    supports, material, any test-print tuning. Link the source model if it's a remix.
 
-7. **Commit** `models/<name>/` only (artifacts are gitignored). Ask before committing.
+7. **Regress**: if you touched anything shared (`lib/`, `build.py`, `templates/`),
+   run `pytest` (rebuilds every model — solid / fits-P2S / mounts-fuse). Keep green.
+   Dirs with a `.modelignore` are excluded on purpose (vendor remixes) — don't copy them.
+
+8. **Commit** `models/<name>/` only (artifacts are gitignored). Ask before committing.
+
+See `docs/improvement-plan.md` for the repo's own backlog.
 
 ## Modifying an existing model in the repo
 
