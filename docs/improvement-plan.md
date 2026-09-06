@@ -7,9 +7,9 @@ Work items **top to bottom**; do one item per PR/commit unless they're trivial.
 
 1. **Regression must stay green.** `pytest` rebuilds every model under `models/`
    (except dirs with a `.modelignore`) and asserts: builds without error, mesh is
-   solid/watertight, fits the P2S 256³ volume, declared `MOUNTS` actually fuse.
-   Run it before and after your change. New shared code that breaks an existing
-   model is not done.
+   solid/watertight, fits the P2S 256³ volume, declared `MOUNTS` actually fuse,
+   no mount floats free of the body. Run it before and after your change. New
+   shared code that breaks an existing model is not done.
 2. **Token discipline still applies** (see [../CLAUDE.md](../CLAUDE.md)). No reading
    `*.stl` / `*.3mf` / large `*.step`. Judge results from `preview.png` + metrics.
 3. **`.modelignore`**: a model dir containing this file is excluded from `--all`,
@@ -35,59 +35,39 @@ Work items **top to bottom**; do one item per PR/commit unless they're trivial.
 - **Files:** new `tools/gen_index.py`, `models/INDEX.md`, hook into `build.py --all`.
 - **Acceptance:** `python tools/gen_index.py` regenerates it; CI checks it's current.
 
-### 3. Design-rule checks in `build.py`
-- **Goal:** turn "look at the preview" into machine checks. Flag: min wall thickness
-  below `printer.WALL_MIN`, bbox exceeding build volume, non-watertight, and
-  **mount footprint not covered by body geometry at z≈0** (the most common
-  1-prompt failure — snaps floating off the back face).
-- **Files:** `build.py`, maybe `lib/checks.py`.
-- **Acceptance:** `--strict` fails a deliberately-thin-walled fixture model; passes
-  all real models. Wall-thickness check can be ray-cast based or via
-  `trimesh` proximity — approximate is fine, document the method.
-
-### 4. Better preview render
-- **Goal:** previews that actually show fit and wall thickness.
-- **Add:** a **mid-plane section view** (replace the washed-out "top" panel, or make
-  it 5 panels); burn view label + bbox (mm) into each panel; optional ghosted
-  fixture behind the model — `lib/fixtures.py` with `opengrid_board(cols,rows)` and
-  `gf_baseplate(nx,ny)` — to eyeball grid alignment in one image.
-- **Files:** `lib/render.py`, new `lib/fixtures.py`.
-- **Acceptance:** needle-holder preview shows a labelled section; a snap mount
-  visibly lands on the board ghost.
-
-### 5. Geometry helpers in `lib/printer.py`
+### 3. Geometry helpers in `lib/printer.py`
 - **Goal:** shrink the prompt. Add `screw_hole(part, face, "M3", "clear")`,
   `chamfer_bottom(part, ELEPHANT_FOOT_RELIEF)`, `pocket_for(diameter, fit="normal")`.
 - **Files:** `lib/printer.py`, `docs/design-rules.md` (document them),
   `templates/` (use them).
 - **Acceptance:** at least one golden example from item 1 uses each helper.
 
-### 6. Variant builds without env vars
+### 4. Variant builds without env vars
 - **Goal:** replace `MOUNT=multiconnect python build.py ...` with
   `build.py <model> --variant multiconnect` → `build(variant=...)`.
 - **Files:** `build.py`, `templates/model_template.py`, `models/opengrid-1cell-box/`.
 - **Acceptance:** regression suite builds every declared variant of every model.
 
-### 7. Multi-template scaffolding
+### 5. Multi-template scaffolding
 - **Goal:** `templates/model_template_opengrid.py`,
   `templates/model_template_gridfinity_bin.py`, `templates/model_template_tray.py`
   instead of one generic box.
 - **Files:** `templates/`, `.claude/skills/model/SKILL.md`, `README.md`.
 
-### 8. Consolidate convention docs
+### 6. Consolidate convention docs
 - **Goal:** one canonical `docs/conventions.md` (axes, z=0 mounting face, `MOUNTS`,
   naming, licences). `CLAUDE.md`, `SKILL.md`, `README.md` link to it, don't restate.
 - **Fixes existing drift:** template says `snaps("jp4")`, the 1-cell prompt says
   `basic_full`.
 
-### 9. Decide Gridfinity fidelity
+### 7. Decide Gridfinity fidelity
 - **Goal:** either model the exact stepped foot profile + stacking lip in
   `lib/gridfinity.py`, or vendor `gridfinity-rebuilt-openscad` the way connectors
   are vendored. Until then, keep the "prototype, may not mate commercial bins"
   note prominent.
 - **Files:** `lib/gridfinity.py`, `docs/design-rules.md`.
 
-### 10. Requirements / setup hardening
+### 8. Requirements / setup hardening
 - Pin versions in `requirements.txt`; add `numpy`; drop unused `numpy-stl` if the
   render path doesn't need it. Add a `make check` / `make build-all`.
 
@@ -96,6 +76,16 @@ Work items **top to bottom**; do one item per PR/commit unless they're trivial.
 - **Regression harness.** `build.py` refactored: `iter_models()`, `build_target()`
   returning a `BuildResult`, `python build.py --all [--strict] [--no-png]` with a
   pass/fail summary and non-zero exit. `tests/test_models.py` parametrizes over
-  every non-ignored model. `pytest.ini` scopes collection. — _commit: TBD_
+  every non-ignored model. `pytest.ini` scopes collection. — _9141555_
 - **`.modelignore` convention** + marker in `models/Expo-Marker-Circle-Companion/`.
-  — _commit: TBD_
+  — _9141555_
+- **Design-rule checks** (`lib/checks.py`): approximate min-wall (ray-cast into the
+  solid, 1st percentile) and uncovered-mount detection (point-sample the body
+  where each snap/backer attaches). Run on the mount-free body so vendored snap
+  tabs don't false-alarm. Uncovered mount → always fails; thin wall → warning,
+  `--strict` fails below `WALL_HARD_FLOOR` (0.6 mm). — _TBD_
+- **Preview overhaul** (`lib/render.py`, `lib/fixtures.py`): 4 labelled panels
+  (iso + bbox dims, opening, mid-plane section via `vtkClipClosedSurface`, wall
+  side); translucent reference fixture behind the part (openGrid board inferred
+  from MOUNTS, or a model's `PREVIEW` dict for a Gridfinity baseplate / custom
+  section axis). — _65f2e46_

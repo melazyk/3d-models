@@ -48,3 +48,19 @@ def test_modelignore_is_respected():
     for d in (ROOT / "models").glob("*/"):
         if (d / ".modelignore").exists():
             assert d.name not in listed, f"{d.name} has .modelignore but was still listed"
+
+
+@pytest.mark.skipif(not HAVE_OPENSCAD, reason="needs OpenSCAD to fuse the mount")
+def test_checks_catch_a_floating_mount(tmp_path):
+    d = tmp_path / "floating_mount"
+    d.mkdir()
+    (d / "model.py").write_text(
+        "import cadquery as cq\n"
+        "from lib import mounts\n"
+        "def build():\n"
+        "    return cq.Workplane('XY').box(20, 20, 10, centered=(True, True, False))\n"
+        "MOUNTS = mounts.snaps('jp4', cols=1, rows=1, origin=(40, 0))\n"
+    )
+    res = build_target(d / "model.py", want_png=False, tol=0.05, verbose=False)
+    assert res.uncovered, "a snap 40 mm off the body should be flagged as uncovered"
+    assert not res.ok

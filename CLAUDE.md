@@ -52,7 +52,10 @@ before dimensioning anything with a fit).
 
 - After any change to `lib/`, `build.py`, or `templates/`, run **`pytest`** (or
   `python build.py --all --no-png`). It rebuilds every model and checks solid /
-  fits-P2S / mounts-fuse. Keep it green.
+  fits-P2S / mounts-fuse / min-wall / no floating mounts. Keep it green.
+- `build.py` prints `min wall ~X mm` and flags `UNCOVERED MOUNTS` (a snap/backer
+  with no body behind it — fix the body or the `MOUNTS` origin). `--strict` also
+  fails walls below 0.6 mm and un-fused mounts.
 - A model dir with a **`.modelignore`** file is excluded from `--all`, the tests,
   and reference-example matching — it's a deliberate non-parametric vendor remix
   (e.g. `models/Expo-Marker-Circle-Companion/`). Don't pattern-match new models on it.

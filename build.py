@@ -97,6 +97,9 @@ def fmt_metrics(mm: dict) -> str:
     )
 
 
+WALL_HARD_FLOOR = 0.6  # below this a wall is barely 1 perimeter -- fail under --strict
+
+
 @dataclass
 class BuildResult:
     name: str
@@ -105,6 +108,8 @@ class BuildResult:
     solid: bool | None = None
     had_mounts: bool = False
     mounts_applied: bool = False
+    wall_min: float | None = None
+    uncovered: list = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
     error: str | None = None
 
@@ -116,8 +121,12 @@ class BuildResult:
             out.append("does not fit P2S 256^3")
         if self.solid is False:
             out.append("mesh is not solid / watertight")
+        if self.uncovered:
+            out.append(f"mount(s) with no body behind them: {self.uncovered}")
         if strict and self.had_mounts and not self.mounts_applied:
             out.append("MOUNTS declared but not fused (OpenSCAD missing?)")
+        if strict and self.wall_min is not None and self.wall_min < WALL_HARD_FLOOR:
+            out.append(f"min wall ~{self.wall_min:.2f} mm < {WALL_HARD_FLOOR} mm")
         return out
 
 
@@ -187,6 +196,32 @@ def build_target(script: Path, *, want_png: bool, tol: float,
     log(fmt_metrics(mm))
     log(f"  wrote {stl.relative_to(ROOT)}, {step.relative_to(ROOT)}")
 
+    # design-rule checks -- run on the mount-free body so vendored snap tabs
+    # (deliberately thin) don't false-alarm.
+    check_stl = out / "_body.stl"
+    if not check_stl.exists():
+        check_stl = stl
+    try:
+        import trimesh
+
+        from lib import checks
+
+        bmesh = trimesh.load(str(check_stl))
+        res.wall_min = checks.min_wall(bmesh)
+        if mount_spec and res.mounts_applied:
+            res.uncovered = checks.uncovered_mounts(bmesh, mount_spec)
+        if res.wall_min is not None:
+            thin = res.wall_min < printer.WALL_MIN
+            log(f"  min wall ~{res.wall_min:.2f} mm" + ("  <- below WALL_MIN" if thin else ""))
+            if thin:
+                res.warnings.append(
+                    f"min wall ~{res.wall_min:.2f} mm < WALL_MIN {printer.WALL_MIN}"
+                )
+        if res.uncovered:
+            log(f"  UNCOVERED MOUNTS: {res.uncovered}")
+    except Exception as e:  # noqa: BLE001
+        res.warnings.append(f"checks skipped: {e}")
+
     if want_png:
         from lib import fixtures, render
 
@@ -212,7 +247,7 @@ def build_target(script: Path, *, want_png: bool, tol: float,
             res.warnings.append(f"PNG render failed: {e}")
             log(f"  PNG render failed ({e}); wrote {svg.relative_to(ROOT)}")
 
-    res.ok = not (res.error or res.fits_p2s is False or res.solid is False)
+    res.ok = not res.problems(strict=False)
     return res
 
 
