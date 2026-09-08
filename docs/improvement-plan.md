@@ -69,7 +69,7 @@ Work items **top to bottom**; do one item per PR/commit unless they're trivial.
 
 ### 8. Requirements / setup hardening
 - Pin versions in `requirements.txt`; add `numpy`; drop unused `numpy-stl` if the
-  render path doesn't need it. Add a `make check` / `make build-all`.
+  render path doesn't need it. (`Makefile` targets — done.)
 
 ## Done
 
@@ -94,3 +94,5 @@ Work items **top to bottom**; do one item per PR/commit unless they're trivial.
 - **Gridfinity golden examples**: `models/gridfinity-divider-bin/` (compartment
   grid) and `models/gridfinity-baseplate/` (basic baseplate), each with a
   `prompts/<name>.md`. First models to exercise `lib/gridfinity.py`. — _3ccfb6a_
+- **`Makefile`**: `make test` / `check` / `build-all` / `build MODEL=…` / `list` /
+  `clean` / `setup` / `regen`; `make help` self-documents. — f8848e3_

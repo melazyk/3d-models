@@ -50,9 +50,10 @@ before dimensioning anything with a fit).
 
 ## Don't break existing models
 
-- After any change to `lib/`, `build.py`, or `templates/`, run **`pytest`** (or
-  `python build.py --all --no-png`). It rebuilds every model and checks solid /
-  fits-P2S / mounts-fuse / min-wall / no floating mounts. Keep it green.
+- After any change to `lib/`, `build.py`, or `templates/`, run **`make test`**
+  (= `pytest`; or `make check` for the strict/fast CI gate). It rebuilds every
+  model and checks solid / fits-P2S / mounts-fuse / min-wall / no floating mounts.
+  Keep it green.
 - `build.py` prints `min wall ~X mm` and flags `UNCOVERED MOUNTS` (a snap/backer
   with no body behind it — fix the body or the `MOUNTS` origin). `--strict` also
   fails walls below 0.6 mm and un-fused mounts.

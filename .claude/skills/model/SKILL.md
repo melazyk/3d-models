@@ -56,7 +56,7 @@ often **Multiconnect** / **openConnect** snaps or **Gridfinity** (42 mm).
    supports, material, any test-print tuning. Link the source model if it's a remix.
 
 7. **Regress**: if you touched anything shared (`lib/`, `build.py`, `templates/`),
-   run `pytest` (rebuilds every model — solid / fits-P2S / mounts-fuse). Keep green.
+   run `make test` (rebuilds every model — solid / fits-P2S / mounts-fuse). Keep green.
    Dirs with a `.modelignore` are excluded on purpose (vendor remixes) — don't copy them.
 
 8. **Commit** `models/<name>/` only (artifacts are gitignored). Ask before committing.

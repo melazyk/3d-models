@@ -139,10 +139,14 @@ What it prints, and what fails the build:
 ### Every model (the regression check)
 
 ```bash
-python build.py --all                     # rebuild all → pass/fail summary
-python build.py --all --strict --no-png    # CI: strict + fast
-pytest                                     # the same, as a test suite (~2 s)
+make test           # pytest — rebuild every model, assert it still builds (~2 s)
+make check          # strict + fast, for CI (build.py --all --strict --no-png)
+make build-all      # rebuild all with previews, pass/fail summary
+make list           # the models the regression covers (.modelignore excluded)
 ```
+
+(or call the underlying `python build.py --all [--strict] [--no-png]` / `pytest`
+directly — `make help` lists every target.)
 
 The committed `models/*/model.py` **are** the regression fixtures. `--all` / `pytest`
 re-runs each one through your current `lib/` + `build.py`; a test goes red when a
@@ -191,6 +195,7 @@ If a `MOUNTS` build prints `MOUNTS skipped: OpenSCAD not found`, run
 | `lib/connectors/` | official snap/screw/slot geometry as STL + `vendor/regenerate.sh` |
 | `docs/design-rules.md` | dimensions, tolerances, grid specs — read before dimensioning fits |
 | `build.py` | `model.py` → STL + STEP + preview + metrics; `--all` rebuilds every model |
+| `Makefile` | `make test` / `check` / `build-all` / `build MODEL=…` / `clean` — `make help` lists all |
 | `tests/` | `pytest` — regression: every model still builds solid / fits P2S / fuses mounts |
 | `docs/improvement-plan.md` | repo backlog for the agent (regression rules, `.modelignore`, roadmap) |
 | `CLAUDE.md` | how the AI workflow keeps token cost down (models as code, never read meshes) |
@@ -202,7 +207,10 @@ too — recreate with its `regenerate.sh`.
 ## Setup
 
 ```bash
-pip install -r requirements.txt                 # cadquery, trimesh, manifold3d, pytest
-bash lib/connectors/vendor/regenerate.sh         # OpenSCAD + BOSL2, only if you use MOUNTS
-pytest                                           # sanity-check the install: builds every model
+make setup     # pip install -r requirements.txt  +  regenerate.sh (OpenSCAD + BOSL2)
+make test      # sanity-check the install: rebuilds every model
 ```
+
+(`make setup` runs `pip install -r requirements.txt` — cadquery, trimesh,
+manifold3d, pytest — then `bash lib/connectors/vendor/regenerate.sh`, only needed
+for models with `MOUNTS`. Run the two by hand if you don't have `make`.)
