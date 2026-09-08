@@ -95,4 +95,4 @@ Work items **top to bottom**; do one item per PR/commit unless they're trivial.
   grid) and `models/gridfinity-baseplate/` (basic baseplate), each with a
   `prompts/<name>.md`. First models to exercise `lib/gridfinity.py`. — _3ccfb6a_
 - **`Makefile`**: `make test` / `check` / `build-all` / `build MODEL=…` / `list` /
-  `clean` / `setup` / `regen`; `make help` self-documents. — f8848e3_
+  `clean` / `setup` / `regen`; `make help` self-documents. — _98aaf4f_
