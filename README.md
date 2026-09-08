@@ -4,9 +4,11 @@ Parametric 3D-printable models and remixes, targeting a **Bambu Lab P2S** (256³
 and the **openGrid** wall system.
 
 Every model is a small **CadQuery script** (`models/<name>/model.py`). `build.py`
-turns it into `part.stl` + `part.step` + a `preview.png` and prints size / volume /
-"is it a solid" metrics. Mounts (openGrid snaps, Multiconnect slots) are fused on
-from real vendor geometry at build time.
+turns it into `part.stl` + `part.step` + a `preview.png`, prints size / volume /
+"is it a solid" metrics, and runs a few design-rule checks. Mounts (openGrid snaps,
+Multiconnect slots) are fused on from real vendor geometry at build time.
+`pytest` (or `python build.py --all`) rebuilds every model at once — run it after
+touching anything shared so a change can't silently break an existing part.
 
 ---
 
@@ -30,8 +32,10 @@ from real vendor geometry at build time.
    - scaffolds `models/<name>/model.py` from the template,
    - keeps every tunable in a `P` dataclass,
    - builds it, looks at `build/<name>/preview.png` and the metrics,
-   - iterates until it fits the P2S, is watertight, and has no thin walls,
-   - writes `models/<name>/README.md` (print orientation, supports, licence).
+   - iterates until the checks pass (fits the P2S, watertight, no thin walls,
+     mounts land on the body),
+   - writes `models/<name>/README.md` (print orientation, supports, licence),
+   - runs `pytest` if it touched any shared code.
 
 3. **Iterate in chat**: "walls thinner", "10 mm deeper", "add a Multiconnect
    version". Claude edits `model.py` and rebuilds — it never hand-edits the STL.
@@ -45,11 +49,13 @@ cp templates/model_template.py models/my-part/model.py
 $EDITOR models/my-part/model.py          # geometry as code; params in the `P` dataclass
 python build.py models/my-part           # -> build/my-part/{part.stl,part.step,preview.png}
 python build.py models/my-part --no-png   # skip the render while iterating fast
+pytest                                    # if you also changed lib/ or build.py
 ```
 
 `model.py` must expose `def build() -> cq.Workplane` (or `result = ...`). To add a
 mount, set a module-level `MOUNTS` (see below). Open `build/<name>/preview.png`
-(iso / opening / wall side / top) to check it.
+(iso / opening / section / wall side) to check it — see
+[Checking a model](#checking-a-model--regression) for what `build.py` verifies.
 
 ### Writing the prompt — example
 
@@ -97,9 +103,81 @@ MOUNTS = mounts.combine(mounts.snaps(...), mounts.slots(...))
 `build.py` fuses these via OpenSCAD's manifold backend. First run needs OpenSCAD:
 `bash lib/connectors/vendor/regenerate.sh` (downloads it locally, no root).
 
-Worked examples: [`models/opengrid-needle-holder/`](models/opengrid-needle-holder/)
-(2×2 snaps), [`models/opengrid-1cell-box/`](models/opengrid-1cell-box/) (snap +
-Multiconnect from one model, `MOUNT=multiconnect python build.py ...`).
+Worked examples (each has a matching `prompts/<name>.md`):
+- [`models/opengrid-needle-holder/`](models/opengrid-needle-holder/) — 2×2 snaps
+- [`models/opengrid-1cell-box/`](models/opengrid-1cell-box/) — snap + Multiconnect
+  from one model (`MOUNT=multiconnect python build.py ...`)
+- [`models/gridfinity-divider-bin/`](models/gridfinity-divider-bin/) — Gridfinity
+  bin with a grid of compartments
+- [`models/gridfinity-baseplate/`](models/gridfinity-baseplate/) — basic baseplate
+
+---
+
+## Checking a model / regression
+
+`build.py` runs the same checks whether you build one model or all of them, and its
+exit code is non-zero if anything is wrong — it drops straight into CI.
+
+### One model
+
+```bash
+python build.py models/<name>            # build + preview + checks
+python build.py models/<name> --no-png   # skip the render (faster) while iterating
+python build.py models/<name> --strict   # treat warnings as failures
+```
+
+What it prints, and what fails the build:
+
+| line in the output | meaning | fails? |
+|---|---|---|
+| `body bbox … (fits / TOO BIG for P2S)` | bounding box vs the 256³ volume | yes if too big |
+| `mesh: … solid True/False …` | watertight / manifold (checked with `manifold3d`) | yes if `False` |
+| `mounts: +N snap(s)` / `MOUNTS skipped` | were the snaps / backers fused on | `--strict` only |
+| `min wall ~X mm` | roughest wall, ray-cast estimate | warns; `--strict` fails below 0.6 mm |
+| `UNCOVERED MOUNTS: [(x, y)…]` | a snap / backer with no body behind it at z≈0 | **yes, always** — fix the body or the `MOUNTS` origin |
+
+### Every model (the regression check)
+
+```bash
+make test           # pytest — rebuild every model, assert it still builds (~2 s)
+make check          # strict + fast, for CI (build.py --all --strict --no-png)
+make build-all      # rebuild all with previews, pass/fail summary
+make list           # the models the regression covers (.modelignore excluded)
+```
+
+(or call the underlying `python build.py --all [--strict] [--no-png]` / `pytest`
+directly — `make help` lists every target.)
+
+The committed `models/*/model.py` **are** the regression fixtures. `--all` / `pytest`
+re-runs each one through your current `lib/` + `build.py`; a test goes red when a
+model that used to build no longer does — build error, not watertight, doesn't fit,
+lost its mount, grew a thin wall. **Run it after any change to `lib/`, `build.py`,
+or `templates/`, and keep it green before committing.** It does *not* compare exact
+geometry — an invariant has to actually break for it to notice.
+
+### Excluding a model — `.modelignore`
+
+A `models/<name>/.modelignore` file (contents are just a note for humans) takes that
+model out of `--all`, `pytest`, and reference-example matching. Use it for a vendor
+remix kept as downloaded geometry rather than a parametric `model.py` (e.g.
+[`models/Expo-Marker-Circle-Companion/`](models/Expo-Marker-Circle-Companion/)).
+
+### Per-model overrides in `model.py`
+
+Two optional module-level dicts, read by `build.py`:
+
+```python
+# translucent reference ghosted behind the model in the preview, and the cut plane
+PREVIEW = {"fixture": "gridfinity", "nx": 2, "ny": 1}   # or "opengrid" + cols/rows
+PREVIEW = {"section_axis": "x"}                          # section plane, default "y"
+
+# opt out of a check that genuinely doesn't apply to this part
+CHECKS = {"min_wall": False}    # e.g. a basic Gridfinity baseplate is thin by design
+CHECKS = {"mounts": False}      # skip the mount-coverage check
+```
+
+If a `MOUNTS` build prints `MOUNTS skipped: OpenSCAD not found`, run
+`bash lib/connectors/vendor/regenerate.sh` once.
 
 ---
 
@@ -116,7 +194,10 @@ Multiconnect from one model, `MOUNT=multiconnect python build.py ...`).
 | `lib/mounts.py` | openGrid / Multiconnect mounting — `snaps()`, `slots()`, `combine()` |
 | `lib/connectors/` | official snap/screw/slot geometry as STL + `vendor/regenerate.sh` |
 | `docs/design-rules.md` | dimensions, tolerances, grid specs — read before dimensioning fits |
-| `build.py` | `model.py` → STL + STEP + preview + metrics |
+| `build.py` | `model.py` → STL + STEP + preview + metrics; `--all` rebuilds every model |
+| `Makefile` | `make test` / `check` / `build-all` / `build MODEL=…` / `clean` — `make help` lists all |
+| `tests/` | `pytest` — regression: every model still builds solid / fits P2S / fuses mounts |
+| `docs/improvement-plan.md` | repo backlog for the agent (regression rules, `.modelignore`, roadmap) |
 | `CLAUDE.md` | how the AI workflow keeps token cost down (models as code, never read meshes) |
 
 STL / 3MF / gcode are build artifacts and gitignored (except the vendored connector
@@ -126,6 +207,10 @@ too — recreate with its `regenerate.sh`.
 ## Setup
 
 ```bash
-pip install -r requirements.txt                 # cadquery, trimesh, manifold3d
-bash lib/connectors/vendor/regenerate.sh         # OpenSCAD + BOSL2, only if you use MOUNTS
+make setup     # pip install -r requirements.txt  +  regenerate.sh (OpenSCAD + BOSL2)
+make test      # sanity-check the install: rebuilds every model
 ```
+
+(`make setup` runs `pip install -r requirements.txt` — cadquery, trimesh,
+manifold3d, pytest — then `bash lib/connectors/vendor/regenerate.sh`, only needed
+for models with `MOUNTS`. Run the two by hand if you don't have `make`.)

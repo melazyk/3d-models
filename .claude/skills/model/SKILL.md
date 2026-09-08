@@ -25,7 +25,10 @@ often **Multiconnect** / **openConnect** snaps or **Gridfinity** (42 mm).
 2. **Read `docs/design-rules.md`** before choosing any dimension that has a fit
    (clearances, screw holes, wall thickness, grid pitches).
 
-3. **Scaffold**: `cp templates/model_template.py models/<kebab-name>/model.py`.
+3. **Scaffold**: copy the closest existing model (`models/*/model.py`, each has a
+   matching `prompts/*.md`) or `templates/model_template.py` to
+   `models/<kebab-name>/model.py`. Gridfinity → start from `gridfinity-divider-bin`
+   or `gridfinity-baseplate`; openGrid → `opengrid-needle-holder` / `opengrid-1cell-box`.
    Keep every tunable in the `P` dataclass. Use `lib/`:
    - `lib/printer.py` — clearances (`CLEARANCE_NORMAL` …), `SCREWS["M3"]`, `report_fit`.
    - `lib/gridfinity.py` — `base_plate`, `bin_body`, `solid_bin`.
@@ -52,7 +55,13 @@ often **Multiconnect** / **openConnect** snaps or **Gridfinity** (42 mm).
 6. **Document**: add `models/<name>/README.md` — what it is, print orientation,
    supports, material, any test-print tuning. Link the source model if it's a remix.
 
-7. **Commit** `models/<name>/` only (artifacts are gitignored). Ask before committing.
+7. **Regress**: if you touched anything shared (`lib/`, `build.py`, `templates/`),
+   run `make test` (rebuilds every model — solid / fits-P2S / mounts-fuse). Keep green.
+   Dirs with a `.modelignore` are excluded on purpose (vendor remixes) — don't copy them.
+
+8. **Commit** `models/<name>/` only (artifacts are gitignored). Ask before committing.
+
+See `docs/improvement-plan.md` for the repo's own backlog.
 
 ## Modifying an existing model in the repo
 
