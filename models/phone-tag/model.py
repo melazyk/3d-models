@@ -23,7 +23,7 @@ FONT = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 class P:
     """All tunables live here."""
     front_text: str = "+7 (915) 328-89-01"
-    back_text: str = "+7 (916) 326-21-56"
+    back_text: str = "+7 (916) 236-21-56"
     width: float = 100.0         # rectangular plate, X
     height: float = 28.0         # rectangular plate, Y
     thickness: float = 2.0       # total, Z
