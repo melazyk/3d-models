@@ -48,6 +48,7 @@ def load_model(script: Path):
     opts = {
         "preview": getattr(mod, "PREVIEW", None),
         "checks": getattr(mod, "CHECKS", {}) or {},
+        "color_parts": getattr(mod, "color_parts", None),
     }
     return part, getattr(mod, "MOUNTS", None), opts
 
@@ -197,6 +198,28 @@ def build_target(script: Path, *, want_png: bool, tol: float,
     else:
         cq.exporters.export(part, str(stl), tolerance=tol, angularTolerance=0.1)
 
+    color_overlays, base_color = None, None
+    if opts["color_parts"]:
+        from lib import multicolor
+
+        cparts = opts["color_parts"]()
+        for i, (cname, chex, cbody) in enumerate(cparts):
+            cstl = out / f"color{i + 1}_{cname}.stl"
+            cq.exporters.export(cbody, str(cstl), tolerance=tol, angularTolerance=0.1)
+            if i == 0:
+                base_stl, base_color = str(cstl), multicolor.hex_rgb(chex)
+            else:
+                color_overlays = (color_overlays or []) + [
+                    (str(cstl), multicolor.hex_rgb(chex))]
+        multicolor.write_3mf(cparts, str(out / "part.3mf"), name=name, tol=tol)
+        # STEP can carry colour: replace the fused body with a coloured assembly
+        asm = cq.Assembly(name=name)
+        for cname, chex, cbody in cparts:
+            asm.add(cbody, name=cname, color=cq.Color(*multicolor.hex_rgb(chex)))
+        asm.export(str(step))
+        log(f"  multicolour: {len(cparts)} filaments -> "
+            f"{(out / 'part.3mf').relative_to(ROOT)} (+ color*_*.stl)")
+
     mm = mesh_metrics(stl)
     res.solid = mm.get("solid")
     log(fmt_metrics(mm))
@@ -247,8 +270,13 @@ def build_target(script: Path, *, want_png: bool, tol: float,
         sec_axis = (preview_spec or {}).get("section_axis", "y")
         png = out / "preview.png"
         try:
-            render.render_png(str(stl), str(png), section_axis=sec_axis,
-                              fixture_stl=fixture_stl)
+            if base_color is not None:
+                render.render_png(base_stl, str(png), section_axis=sec_axis,
+                                  fixture_stl=fixture_stl, color=base_color,
+                                  overlays=color_overlays)
+            else:
+                render.render_png(str(stl), str(png), section_axis=sec_axis,
+                                  fixture_stl=fixture_stl)
             log(f"  wrote {png.relative_to(ROOT)}")
         except Exception as e:  # noqa: BLE001
             svg = out / "preview.svg"

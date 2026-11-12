@@ -51,9 +51,14 @@ def _bounds_extent(algo):
 
 def render_png(part, out_path: str, size: int = 500, *,
                section: bool = True, section_axis: str = "y",
-               fixture_stl: str | None = None) -> str:
+               fixture_stl: str | None = None,
+               color: tuple[float, float, float] | None = None,
+               overlays: list | None = None) -> str:
     """Write a 2x2 multi-view PNG. `part` is a cq.Workplane/Shape or a path to an
-    STL file. `section_axis` ("x"/"y") is the cut-plane normal. Raises on failure."""
+    STL file. `section_axis` ("x"/"y") is the cut-plane normal. `color` tints the
+    part; `overlays` = [(stl_path, (r, g, b)), ...] extra bodies (e.g. the other
+    filaments of a multi-colour model), drawn in every view but the section.
+    Raises on failure."""
     import vtkmodules.vtkRenderingOpenGL2  # noqa
     import vtkmodules.vtkInteractionStyle  # noqa
     from vtkmodules.vtkCommonDataModel import vtkPlane, vtkPlaneCollection
@@ -72,6 +77,7 @@ def render_png(part, out_path: str, size: int = 500, *,
     src = _source(part)
     (dx, dy, dz), _ = _bounds_extent(src)
 
+    ov_srcs = [(_source(pth), rgb) for pth, rgb in (overlays or [])]
     fixture_src = _source(fixture_stl) if fixture_stl and os.path.exists(fixture_stl) else None
 
     # section: clip the closed surface on the Y=0 plane, keep y<=0, so the cut
@@ -120,12 +126,22 @@ def render_png(part, out_path: str, size: int = 500, *,
         m.ScalarVisibilityOff()
         a = vtkActor()
         a.SetMapper(m)
-        a.GetProperty().SetColor(0.78, 0.80, 0.86)
+        a.GetProperty().SetColor(*(color or (0.78, 0.80, 0.86)))
         a.GetProperty().SetInterpolationToPhong()
         if i == 2 and sec:
             a.GetProperty().SetColor(0.90, 0.78, 0.70)  # section: warm, stands out
         ren.AddActor(a)
         keep += [m, a]
+
+        for ov_src, ov_rgb in ov_srcs if not (i == 2 and sec) else []:
+            om = vtkPolyDataMapper()
+            om.SetInputConnection(ov_src.GetOutputPort())
+            om.ScalarVisibilityOff()
+            oa = vtkActor()
+            oa.SetMapper(om)
+            oa.GetProperty().SetColor(*ov_rgb)
+            ren.AddActor(oa)
+            keep += [om, oa]
 
         if fixture_src is not None and not (i == 2 and sec):
             fm = vtkPolyDataMapper()

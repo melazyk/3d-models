@@ -96,3 +96,7 @@ Work items **top to bottom**; do one item per PR/commit unless they're trivial.
   `prompts/<name>.md`. First models to exercise `lib/gridfinity.py`. — _3ccfb6a_
 - **`Makefile`**: `make test` / `check` / `build-all` / `build MODEL=…` / `list` /
   `clean` / `setup` / `regen`; `make help` self-documents. — _98aaf4f_
+- **Multi-colour models** — a model may define `color_parts()` → `[(name, hex, body), …]`;
+  `build.py` then writes `part.3mf` (one object, parts pre-assigned to filament 1/2/…
+  via Bambu `model_settings.config`), `color<N>_<name>.stl`, and a coloured preview
+  (`lib/multicolor.py`, `render_png(color=, overlays=)`). First user: `phone-tag`.
